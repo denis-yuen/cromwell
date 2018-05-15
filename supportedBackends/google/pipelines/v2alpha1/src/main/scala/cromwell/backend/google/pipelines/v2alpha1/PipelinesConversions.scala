@@ -76,7 +76,7 @@ object PipelinesConversions {
     def toEnvironment = Map(directoryOutput.name -> directoryOutput.containerPath)
 
     def toAction(mounts: List[Mount], gsutilFlags: List[String] = List.empty) = {
-      gsutil("cp", "-r", directoryOutput.containerPath, directoryOutput.cloudPath)(mounts, List(ActionFlag.AlwaysRun), description = Option("delocalizing"))
+      gsutil("-m", "cp", "-r", directoryOutput.containerPath, directoryOutput.cloudPath)(mounts, List(ActionFlag.AlwaysRun, ActionFlag.IgnoreExistStatus), description = Option("delocalizing"))
     }
 
     def toMount = {

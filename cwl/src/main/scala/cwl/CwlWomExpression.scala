@@ -1,7 +1,5 @@
 package cwl
 
-import java.nio.file.Paths
-
 import cats.data.Validated.{Invalid, Valid}
 import cats.syntax.validated._
 import common.validation.ErrorOr.{ErrorOr, ShortCircuitingFlatMap}
@@ -68,7 +66,7 @@ final case class InitialWorkDirFileGeneratorExpression(entry: IwdrListingArrayEn
     }
     val updatedValues = inputValues map {
       case (k, v: WomMaybeListedDirectory) => k -> {
-        val absolutePathString = Paths.get(v.value).toAbsolutePath.toString
+        val absolutePathString = ioFunctionSet.pathFunctions.relativeToHostCallRoot(v.value)
         recursivelyBuildDirectory(absolutePathString) match {
           case Valid(d) => d
           case Invalid(es) => throw new RuntimeException(es.toList.mkString("Error building directory: ", ", ", ""))
