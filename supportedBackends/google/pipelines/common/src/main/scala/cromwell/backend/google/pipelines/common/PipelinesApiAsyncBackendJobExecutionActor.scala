@@ -237,7 +237,7 @@ class PipelinesApiAsyncBackendJobExecutionActor(override val standardParams: Sta
     if (referenceName.length <= 127) referenceName else referenceName.md5Sum
   }
 
-  private[pipelines] def generateJesOutputs(jobDescriptor: BackendJobDescriptor): Set[PipelinesApiFileOutput] = {
+  protected def generateJesOutputs(jobDescriptor: BackendJobDescriptor): Set[PipelinesApiFileOutput] = {
     import cats.syntax.validated._
     def evaluateFiles(output: OutputDefinition): List[WomFile] = {
       Try(
