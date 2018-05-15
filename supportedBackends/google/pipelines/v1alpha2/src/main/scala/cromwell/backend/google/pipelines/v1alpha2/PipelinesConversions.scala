@@ -2,8 +2,9 @@ package cromwell.backend.google.pipelines.v1alpha2
 
 import com.google.api.services.genomics.model.{Disk, LocalCopy, PipelineParameter}
 import cromwell.backend.google.pipelines.common.io.PipelinesApiAttachedDisk
-import cromwell.backend.google.pipelines.common.{PipelinesApiFileInput, PipelinesApiFileOutput, PipelinesApiInput, PipelinesApiLiteralInput}
+import cromwell.backend.google.pipelines.common._
 import simulacrum.typeclass
+
 import scala.language.implicitConversions
 
 @typeclass trait ToParameter[A] {
@@ -35,6 +36,20 @@ object PipelinesConversions {
     }
 
     override def toGoogleRunParameter(output: PipelinesApiFileOutput): String = output.cloudPath
+  }
+
+  implicit val outputTo: ToParameter[PipelinesApiOutput] = new ToParameter[PipelinesApiOutput] {
+    override def toGooglePipelineParameter(output: PipelinesApiOutput): PipelineParameter = output match {
+      case fileOutput: PipelinesApiFileOutput => fileOutputTo.toGooglePipelineParameter(fileOutput)
+      case _: PipelinesApiDirectoryOutput =>
+        throw new UnsupportedOperationException("Pipelines API V1 backend does not support PipelinesApiDirectoryOutput parameters. This is a programmer error.")
+    }
+
+    override def toGoogleRunParameter(output: PipelinesApiOutput): String = output match {
+      case fileOutput: PipelinesApiFileOutput => fileOutputTo.toGoogleRunParameter(fileOutput)
+      case _: PipelinesApiDirectoryOutput =>
+        throw new UnsupportedOperationException("Pipelines API V1 backend does not support PipelinesApiDirectoryOutput parameters. This is a programmer error.")
+    }
   }
 
   implicit val inputTo: ToParameter[PipelinesApiInput] = new ToParameter[PipelinesApiInput] {

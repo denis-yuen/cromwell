@@ -47,12 +47,12 @@ object PipelinesApiRequestFactory {
   case class InputOutputParameters(
                                     detritusInputParameters: DetritusInputParameters,
                                     jobInputParameters: List[PipelinesApiFileInput],
-                                    jobOutputParameters: List[PipelinesApiFileOutput],
+                                    jobOutputParameters: List[PipelinesApiOutput],
                                     detritusOutputParameters: DetritusOutputParameters,
                                     literalInputParameters: List[PipelinesApiLiteralInput]
                                   ) {
     lazy val fileInputParameters: List[PipelinesApiFileInput] = jobInputParameters ++ detritusInputParameters.all
-    lazy val fileOutputParameters: List[PipelinesApiFileOutput] = jobOutputParameters ++ detritusOutputParameters.all
+    lazy val fileOutputParameters: List[PipelinesApiOutput] = jobOutputParameters ++ detritusOutputParameters.all
   }
   
   case class CreatePipelineParameters(jobDescriptor: BackendJobDescriptor,

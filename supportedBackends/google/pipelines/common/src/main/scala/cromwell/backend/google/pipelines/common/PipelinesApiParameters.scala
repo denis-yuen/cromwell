@@ -22,6 +22,7 @@ sealed trait PipelinesApiFileParameter extends PipelinesParameter {
 }
 
 sealed trait PipelinesApiInput extends PipelinesParameter
+sealed trait PipelinesApiOutput extends PipelinesApiFileParameter
 
 final case class PipelinesApiFileInput(name: String,
                                        cloudPath: String,
@@ -34,7 +35,15 @@ final case class PipelinesApiFileOutput(name: String,
                                         cloudPath: String,
                                         local: Path,
                                         mount: PipelinesApiAttachedDisk,
-                                        contentType: Option[ContentType] = None) extends PipelinesApiFileParameter {
+                                        contentType: Option[ContentType] = None) extends PipelinesApiOutput {
+  def containerPath: Path = mount.mountPoint.resolve(local)
+}
+
+final case class PipelinesApiDirectoryOutput(name: String,
+                                             cloudPath: String,
+                                             local: Path,
+                                             mount: PipelinesApiAttachedDisk,
+                                             contentType: Option[ContentType] = None) extends PipelinesApiOutput {
   def containerPath: Path = mount.mountPoint.resolve(local)
 }
 

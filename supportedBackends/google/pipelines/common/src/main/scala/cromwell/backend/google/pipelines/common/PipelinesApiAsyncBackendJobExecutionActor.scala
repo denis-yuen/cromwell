@@ -152,7 +152,7 @@ class PipelinesApiAsyncBackendJobExecutionActor(override val standardParams: Sta
     * relativeLocalizationPath("foo/bar.txt") -> "foo/bar.txt"
     * relativeLocalizationPath("gs://some/bucket/foo.txt") -> "some/bucket/foo.txt"
     */
-  private def relativeLocalizationPath(file: WomFile): WomFile = {
+  protected def relativeLocalizationPath(file: WomFile): WomFile = {
     file.mapFile(value =>
       getPath(value) match {
         case Success(path) => path.pathWithoutScheme
@@ -216,7 +216,7 @@ class PipelinesApiAsyncBackendJobExecutionActor(override val standardParams: Sta
     *
     * @throws Exception if the `path` does not live in one of the supplied `disks`
     */
-  private def relativePathAndAttachedDisk(path: String, disks: Seq[PipelinesApiAttachedDisk]): (Path, PipelinesApiAttachedDisk) = {
+  protected def relativePathAndAttachedDisk(path: String, disks: Seq[PipelinesApiAttachedDisk]): (Path, PipelinesApiAttachedDisk) = {
     val absolutePath = DefaultPathBuilder.get(path) match {
       case p if !p.isAbsolute => PipelinesApiWorkingDisk.MountPoint.resolve(p)
       case p => p
@@ -233,11 +233,11 @@ class PipelinesApiAsyncBackendJobExecutionActor(override val standardParams: Sta
     * If the desired reference name is too long, we don't want to break JES or risk collisions by arbitrary truncation. So,
     * just use a hash. We only do this when needed to give better traceability in the normal case.
     */
-  private def makeSafeJesReferenceName(referenceName: String) = {
+  protected def makeSafeJesReferenceName(referenceName: String) = {
     if (referenceName.length <= 127) referenceName else referenceName.md5Sum
   }
 
-  protected def generateJesOutputs(jobDescriptor: BackendJobDescriptor): Set[PipelinesApiFileOutput] = {
+  protected [pipelines] def generateJesOutputs(jobDescriptor: BackendJobDescriptor): Set[PipelinesApiOutput] = {
     import cats.syntax.validated._
     def evaluateFiles(output: OutputDefinition): List[WomFile] = {
       Try(
@@ -288,14 +288,14 @@ class PipelinesApiAsyncBackendJobExecutionActor(override val standardParams: Sta
     )
   }
 
-  private def generateJesSingleFileOutputs(womFile: WomSingleFile): List[PipelinesApiFileOutput] = {
+  protected def generateJesSingleFileOutputs(womFile: WomSingleFile): List[PipelinesApiFileOutput] = {
     val destination = callRootPath.resolve(womFile.value.stripPrefix("/")).pathAsString
     val (relpath, disk) = relativePathAndAttachedDisk(womFile.value, runtimeAttributes.disks)
     val jesFileOutput = PipelinesApiFileOutput(makeSafeJesReferenceName(womFile.value), destination, relpath, disk)
     List(jesFileOutput)
   }
 
-  private def generateJesGlobFileOutputs(womFile: WomGlobFile): List[PipelinesApiFileOutput] = {
+  protected def generateJesGlobFileOutputs(womFile: WomGlobFile): List[PipelinesApiFileOutput] = {
     val globName = GlobFunctions.globName(womFile.value)
     val globDirectory = globName + "/"
     val globListFile = globName + ".list"
@@ -467,7 +467,7 @@ class PipelinesApiAsyncBackendJobExecutionActor(override val standardParams: Sta
     womFileToGcsPath(generateJesOutputs(jobDescriptor))(womFile)
   }
 
-  private[pipelines] def womFileToGcsPath(jesOutputs: Set[PipelinesApiFileOutput])(womFile: WomFile): WomFile = {
+  private[pipelines] def womFileToGcsPath(jesOutputs: Set[PipelinesApiOutput])(womFile: WomFile): WomFile = {
     womFile mapFile { path =>
       jesOutputs collectFirst {
         case jesOutput if jesOutput.name == makeSafeJesReferenceName(path) => jesOutput.cloudPath

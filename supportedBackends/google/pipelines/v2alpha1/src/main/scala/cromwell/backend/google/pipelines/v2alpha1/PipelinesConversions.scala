@@ -58,6 +58,34 @@ object PipelinesConversions {
     }
   }
 
+  implicit class EnhancedOutput(val output: PipelinesApiOutput) extends AnyVal {
+    def toEnvironment = Map(output.name -> output.containerPath)
+
+    def toAction(mounts: List[Mount], gsutilFlags: List[String] = List.empty) = output match {
+      case fileOutput: PipelinesApiFileOutput => fileOutput.toAction(mounts, gsutilFlags)
+      case directoryOutput: PipelinesApiDirectoryOutput => directoryOutput.toAction(mounts, gsutilFlags)
+    }
+
+    def toMount = output match {
+      case fileOutput: PipelinesApiFileOutput => fileOutput.toMount
+      case directoryOutput: PipelinesApiDirectoryOutput => directoryOutput.toMount
+    }
+  }
+
+  implicit class EnhancedDirectoryOutput(val directoryOutput: PipelinesApiDirectoryOutput) extends AnyVal {
+    def toEnvironment = Map(directoryOutput.name -> directoryOutput.containerPath)
+
+    def toAction(mounts: List[Mount], gsutilFlags: List[String] = List.empty) = {
+      gsutil("cp", "-r", directoryOutput.containerPath, directoryOutput.cloudPath)(mounts, List(ActionFlag.AlwaysRun), description = Option("delocalizing"))
+    }
+
+    def toMount = {
+      new Mount()
+        .setDisk(directoryOutput.mount.name)
+        .setPath(directoryOutput.mount.mountPoint.pathAsString)
+    }
+  }
+
   implicit class EnhancedinputLiteral(val literalInput: PipelinesApiLiteralInput) extends AnyVal {
     def toEnvironment = Map(literalInput.name -> literalInput.value)
   }
