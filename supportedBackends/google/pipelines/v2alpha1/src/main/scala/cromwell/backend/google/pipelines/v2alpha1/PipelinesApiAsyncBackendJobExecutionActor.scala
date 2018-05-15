@@ -1,11 +1,12 @@
-package cromwell.backend.google.pipelines.v2alpha1.api
+package cromwell.backend.google.pipelines.v2alpha1
 
 import cromwell.backend.BackendJobDescriptor
-import cromwell.backend.google.pipelines.common.{PipelinesApiDirectoryOutput, PipelinesApiOutput}
+import cromwell.backend.google.pipelines.common.{PipelinesApiDirectoryOutput, PipelinesApiFileOutput, PipelinesApiOutput}
 import cromwell.backend.standard.StandardAsyncExecutionActorParams
+import cromwell.core.path.DefaultPathBuilder
 import wom.callable.Callable.OutputDefinition
 import wom.expression.NoIoFunctionSet
-import wom.values.{WomFile, WomGlobFile, WomSingleFile, WomUnlistedDirectory}
+import wom.values.{GlobFunctions, WomFile, WomGlobFile, WomSingleFile, WomUnlistedDirectory}
 
 import scala.util.Try
 
@@ -39,5 +40,23 @@ class PipelinesApiAsyncBackendJobExecutionActor(standardParams: StandardAsyncExe
     val (relpath, disk) = relativePathAndAttachedDisk(unlistedDirectory.value, runtimeAttributes.disks)
     val directoryOutput = PipelinesApiDirectoryOutput(makeSafeJesReferenceName(unlistedDirectory.value), destination, relpath, disk)
     List(directoryOutput)
+  }
+  
+  override def generateJesGlobFileOutputs(womFile: WomGlobFile): List[PipelinesApiOutput] = {
+    val globName = GlobFunctions.globName(womFile.value)
+    val globDirectory = globName + "/"
+    val globListFile = globName + ".list"
+    val gcsGlobDirectoryDestinationPath = callRootPath.resolve(globDirectory).pathAsString
+    val gcsGlobListFileDestinationPath = callRootPath.resolve(globListFile).pathAsString
+
+    val (_, globDirectoryDisk) = relativePathAndAttachedDisk(womFile.value, runtimeAttributes.disks)
+
+    // We need both the glob directory and the glob list:
+    List(
+      // The glob directory:
+      PipelinesApiDirectoryOutput(makeSafeJesReferenceName(globDirectory), gcsGlobDirectoryDestinationPath, DefaultPathBuilder.get(globDirectory + "*"), globDirectoryDisk),
+      // The glob list file:
+      PipelinesApiFileOutput(makeSafeJesReferenceName(globListFile), gcsGlobListFileDestinationPath, DefaultPathBuilder.get(globListFile), globDirectoryDisk)
+    )
   }
 }

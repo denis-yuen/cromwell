@@ -248,7 +248,7 @@ class PipelinesApiAsyncBackendJobExecutionActor(override val standardParams: Sta
 
     val womFileOutputs = jobDescriptor.taskCall.callable.outputs.flatMap(evaluateFiles) map relativeLocalizationPath
 
-    val outputs: Seq[PipelinesApiFileOutput] = womFileOutputs.distinct flatMap {
+    val outputs: Seq[PipelinesApiOutput] = womFileOutputs.distinct flatMap {
       _.flattenFiles flatMap {
         case unlistedDirectory: WomUnlistedDirectory => generateUnlistedDirectoryOutputs(unlistedDirectory)
         case singleFile: WomSingleFile => generateJesSingleFileOutputs(singleFile)
@@ -295,7 +295,7 @@ class PipelinesApiAsyncBackendJobExecutionActor(override val standardParams: Sta
     List(jesFileOutput)
   }
 
-  protected def generateJesGlobFileOutputs(womFile: WomGlobFile): List[PipelinesApiFileOutput] = {
+  protected def generateJesGlobFileOutputs(womFile: WomGlobFile): List[PipelinesApiOutput] = {
     val globName = GlobFunctions.globName(womFile.value)
     val globDirectory = globName + "/"
     val globListFile = globName + ".list"
