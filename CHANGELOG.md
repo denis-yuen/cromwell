@@ -25,7 +25,7 @@ If you don't update the `actor-factory` value, you'll get a deprecation warning 
 **PAPI V1**
 
 ### Task Retries
-Cromwell now supports retrying failed tasks upto a specified count by declaring a value for the [maxRetries](RuntimeAttributes.md#maxRetries) key through the WDL runtime attributes.
+Cromwell now supports retrying failed tasks up to a specified count by declaring a value for the [maxRetries](RuntimeAttributes.md#maxRetries) key through the WDL runtime attributes.
 
 ### Labels
 * Cromwell has removed most of the formatting restrictions from custom labels. Please check the [README](README.md#label-format) for more detailed documentation.
