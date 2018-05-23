@@ -38,7 +38,7 @@ import wom.expression.{FileEvaluation, NoIoFunctionSet}
 import wom.types.{WomArrayType, WomSingleFileType}
 import wom.values._
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Success, Try}
@@ -71,6 +71,10 @@ object PipelinesApiAsyncBackendJobExecutionActor {
     }
 
     new Exception(s"Task $jobTag failed. $returnCodeMessage PAPI error code ${errorCode.getCode.value}. $message")
+  }
+
+  private implicit class EnhancedFuture[A](val f: Future[A]) {
+    def sync: A = Await.result(f, 1 minute)
   }
 }
 
@@ -473,8 +477,9 @@ class PipelinesApiAsyncBackendJobExecutionActor(override val standardParams: Sta
   override def mapOutputWomFile(womFile: WomFile): WomFile = {
     val cloudOutputWomFile: WomFile = womFileToGcsPath(generateJesOutputs(jobDescriptor))(womFile)
     val cloudOutputPath: Path = backendEngineFunctions.buildPath(cloudOutputWomFile.value)
+
     // This is not really exceptional for optional output files.
-    if (!cloudOutputPath.exists) throw new FileNotFoundException(s"Could not process output, file not found: ${cloudOutputPath.pathAsString}")
+    if (!asyncIo.existsAsync(cloudOutputPath).sync) throw new FileNotFoundException(s"Could not process output, file not found: ${cloudOutputPath.pathAsString}")
     cloudOutputWomFile
   }
 
