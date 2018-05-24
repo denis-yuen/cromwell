@@ -479,8 +479,11 @@ class PipelinesApiAsyncBackendJobExecutionActor(override val standardParams: Sta
     val cloudOutputWomFile: WomFile = womFileToGcsPath(generateJesOutputs(jobDescriptor))(womFile)
     val cloudOutputPath: Path = backendEngineFunctions.buildPath(cloudOutputWomFile.value)
 
-    // This is not really exceptional for optional output files.
-    if (!asyncIo.exists(cloudOutputPath)) throw new FileNotFoundException(s"Could not process output, file not found: ${cloudOutputPath.pathAsString}")
+    // Missing files are not really exceptional for optional output files.
+    // .exists() on the file itself is fast but not 100% compatible with the gs:// URLs supported by gsutil.
+    // AsyncIo appears to be more compatible but a lot slower when used synchronously for individual files like this,
+    // so only use that if exists() returns false.
+    if (!cloudOutputPath.exists() && !asyncIo.exists(cloudOutputPath)) throw new FileNotFoundException(s"Could not process output, file not found: ${cloudOutputPath.pathAsString}")
     cloudOutputWomFile
   }
 
