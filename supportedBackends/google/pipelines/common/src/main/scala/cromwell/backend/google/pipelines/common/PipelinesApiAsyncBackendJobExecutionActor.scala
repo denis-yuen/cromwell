@@ -23,6 +23,7 @@ import cromwell.backend.google.pipelines.common.io.{PipelinesApiAttachedDisk, Pi
 import cromwell.backend.io.DirectoryFunctions
 import cromwell.backend.standard.{StandardAsyncExecutionActor, StandardAsyncExecutionActorParams, StandardAsyncJob}
 import cromwell.core._
+import cromwell.core.io.AsyncIo
 import cromwell.core.logging.JobLogger
 import cromwell.core.path.{DefaultPathBuilder, Path}
 import cromwell.core.retry.SimpleExponentialBackoff
@@ -73,8 +74,8 @@ object PipelinesApiAsyncBackendJobExecutionActor {
     new Exception(s"Task $jobTag failed. $returnCodeMessage PAPI error code ${errorCode.getCode.value}. $message")
   }
 
-  private implicit class EnhancedFuture[A](val f: Future[A]) {
-    def sync: A = Await.result(f, 1 minute)
+  private implicit class SyncIo(val async: AsyncIo) extends AnyVal {
+    def exists(path: Path): Boolean = Await.result(async.existsAsync(path), 1 minute)
   }
 }
 
@@ -479,7 +480,7 @@ class PipelinesApiAsyncBackendJobExecutionActor(override val standardParams: Sta
     val cloudOutputPath: Path = backendEngineFunctions.buildPath(cloudOutputWomFile.value)
 
     // This is not really exceptional for optional output files.
-    if (!asyncIo.existsAsync(cloudOutputPath).sync) throw new FileNotFoundException(s"Could not process output, file not found: ${cloudOutputPath.pathAsString}")
+    if (!asyncIo.exists(cloudOutputPath)) throw new FileNotFoundException(s"Could not process output, file not found: ${cloudOutputPath.pathAsString}")
     cloudOutputWomFile
   }
 
